@@ -45,7 +45,7 @@ extension ViewController {
     
 }
 
-// Data hadling
+// Data handling
 extension ViewController {
     
     func parse(json: Data){
@@ -53,7 +53,11 @@ extension ViewController {
         
         if let jsonPetitions = try? decoder.decode(Petitions.self, from: json) {
             petitions = jsonPetitions.results
-            tableView.reloadData()
+            
+            DispatchQueue.main.async { [weak self] in
+                self?.tableView.reloadData()
+            }
+            
         }
     }
     
@@ -69,17 +73,18 @@ extension ViewController {
         
         //let urlString = "https://api.whitehouse.gov/v1/petitions.json?limit=100"
         
-        if let url = URL(string: urlString) {
-            if let data = try? Data(contentsOf: url) {
-                // we're ok to parse
-                parse(json: data)
-                
-            } else {
-                showError()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            if let url = URL(string: urlString) {
+                if let data = try? Data(contentsOf: url) {
+                    // we're ok to parse
+                    self?.parse(json: data)
+                    return
+                }
             }
-        } else {
-            showError()
+            self?.showError()
         }
+        
+        
     }
 }
 
@@ -104,9 +109,12 @@ class ViewController: UITableViewController {
     }
 
     func showError() {
-        let ac = UIAlertController(title: "Loading Error", message: "There was a problem loading the feed. Ploease check your internet connection", preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(ac, animated: true, completion: nil)
+        
+        DispatchQueue.main.async { [weak self] in
+            let ac = UIAlertController(title: "Loading Error", message: "There was a problem loading the feed. Ploease check your internet connection", preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+            self?.present(ac, animated: true, completion: nil)
+        }
     }
     
   
